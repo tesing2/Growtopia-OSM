@@ -2,22 +2,11 @@ const express = require('express');
 const axios = require('axios');
 const app = express();
 const bodyParser = require('body-parser');
-const rateLimit = require('express-rate-limit'); // Perbaiki impor
 const compression = require('compression');
 
 const port = process.env.PORT || 3000;
 
-// Konfigurasi rate limiter
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 menit
-  max: 100, // Maksimal 100 request per windowMs
-  message: 'Too many requests, please try again later.',
-  headers: true, // Kirim header rate limit ke client
-});
-
-// Terapkan rate limiter ke semua request
-app.use(limiter);
-
+// Middleware untuk kompresi response
 app.use(compression({
     level: 5,
     threshold: 0,
@@ -28,8 +17,12 @@ app.use(compression({
         return compression.filter(req, res);
     }
 }));
+
+// Set view engine ke EJS
 app.set('view engine', 'ejs');
 app.set('trust proxy', 1);
+
+// Middleware untuk mengizinkan CORS
 app.use(function (req, res, next) {
     res.header('Access-Control-Allow-Origin', '*');
     res.header(
@@ -39,18 +32,22 @@ app.use(function (req, res, next) {
     console.log(`[${new Date().toLocaleString()}] ${req.method} ${req.url} - ${res.statusCode}`);
     next();
 });
+
+// Middleware untuk parsing body request
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 
+// Tangani request untuk favicon.ico
 app.all('/favicon.ico', function(req, res) {
-    // Tangani request untuk favicon.ico
     res.status(204).end();
 });
 
+// Endpoint untuk registrasi player
 app.all('/player/register', function(req, res) {
     res.send("Coming soon...");
 });
 
+// Endpoint untuk login dashboard player
 app.all('/player/login/dashboard', function (req, res) {
     const tData = {};
     try {
@@ -71,6 +68,7 @@ app.all('/player/login/dashboard', function (req, res) {
     res.render(__dirname + '/public/html/dashboard.ejs', {data: tData});
 });
 
+// Endpoint untuk validasi login GrowID
 app.all('/player/growid/login/validate', (req, res) => {
     const _token = req.body._token;
     const growId = req.body.growId;
@@ -85,6 +83,7 @@ app.all('/player/growid/login/validate', (req, res) => {
     );
 });
 
+// Endpoint untuk memeriksa token
 app.all('/player/growid/checktoken', (req, res) => {
     const { refreshToken } = req.body;
     try {
@@ -105,10 +104,7 @@ app.all('/player/growid/checktoken', (req, res) => {
     }
 });
 
-// Middleware untuk menangani request
-app.use(express.json());
-
-// Endpoint utamaa
+// Endpoint utama
 app.get('/', (req, res) => {
   res.status(200).send('OK. Proxy is running.');
 });
